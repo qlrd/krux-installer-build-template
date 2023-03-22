@@ -62,7 +62,7 @@ runs:
 
     - name: Restore cache build (Linux)
       if: ${{ runner.os == 'Linux' }}
-      id: restore-cache-build
+      id: restore-cache-build-linux
       uses: actions/cache/restore@v3 
       with:
         path: |
@@ -73,7 +73,7 @@ runs:
 
     - name: Restore cache build (Windows)
       if: ${{ runner.os == 'Windows' }}
-      id: restore-cache-build
+      id: restore-cache-build-win
       uses: actions/cache/restore@v3 
       with:
         path: |
@@ -83,12 +83,12 @@ runs:
         key: ${{ runner.os }}-build-${{ hashFiles('src/**', 'public/**', 'vue.config.js') }}
 
     - name: Lint (Linux)
-      if: ${{ runner.os == 'Linux' && steps.cache-restore-build.outputs.cache-hit != 'true' }}
+      if: ${{ runner.os == 'Linux' && steps.cache-restore-build-linux.outputs.cache-hit != 'true' }}
       shell: bash
       run: yarn run lint
    
     - name: Lint (Windows)
-      if: ${{ runner.os == 'Windows' && steps.cache-restore-build.outputs.cache-hit != 'true' }}
+      if: ${{ runner.os == 'Windows' && steps.cache-restore-build-win.outputs.cache-hit != 'true' }}
       shell: pwsh
       run: yarn run lint
 
@@ -132,31 +132,31 @@ runs:
         $Env:OBIN sha256 <$Env:KZIP -binary | $Env:OBIN pkeyutl -verify -pubin -inkey $Env:KPEM -sigfile $Env:KSIG
 
     - name: Build electron app (Linux)
-      if: ${{ runner.os == 'Linux' && steps.cache-restore-build.outputs.cache-hit != 'true' }}
+      if: ${{ runner.os == 'Linux' && steps.cache-restore-build-linux.outputs.cache-hit != 'true' }}
       shell: bash
       env:
         GH_TOKEN: ${{ secrets.github_token }}
       run: yarn run build ${{ matrix.build }}
 
     - name: Build electron app (Windows)
-      if: ${{ runner.os == 'Windows' && steps.cache-restore-build.outputs.cache-hit != 'true' }}
+      if: ${{ runner.os == 'Windows' && steps.cache-restore-build-win.outputs.cache-hit != 'true' }}
       shell: pwsh
       env:
         GH_TOKEN: ${{ secrets.github_token }}
       run: yarn run build ${{ matrix.build }}
 
     - name: Hash electron app (Linux)
-      if: ${{ runner.os == 'Linux' && steps.cache-restore-build.outputs.cache-hit != 'true' }}
+      if: ${{ runner.os == 'Linux' && steps.cache-restore-build-linux.outputs.cache-hit != 'true' }}
       shell: bash
       run: echo "${{ hashFiles(format('**/dist_electron/{0}.{1}', inputs.app_name, inputs.build)) }} ${{ inputs.app_name }}.${{ inputs.build }}" >> dist_electron/${{ inputs.app_name }}.${{ inputs.build }}.sha256sum.txt
 
     - name: Hash electron app (Windows)
-      if: ${{ runner.os == 'Windows' && steps.cache-restore-build.outputs.cache-hit != 'true' }}
+      if: ${{ runner.os == 'Windows' && steps.cache-restore-build-win.outputs.cache-hit != 'true' }}
       shell: pwsh
       run: Write-Output "${{ hashFiles(format('**/dist_electron/{0}.{1}', inputs.app_name, inputs.build)) }} ${{ inputs.app_name }}.${{ inputs.build }}" | Out-File -FilePath dist_electron/${{ inputs.app_name }}.${{ inputs.build }}.sha256sum.txt -Encoding utf8 -Append
 
     - name: Save cache build (Linux)
-      if: ${{ runner.os == 'Linux' && steps.cache-restore-build.outputs.cache-hit != 'true' }}
+      if: ${{ runner.os == 'Linux' && steps.cache-restore-build-linux.outputs.cache-hit != 'true' }}
       uses: actions/cache/save@v3  
       with:
         path: |
@@ -166,7 +166,7 @@ runs:
         key: ${{ runner.os }}-build-${{ hashFiles('src/**', 'public/**', 'vue.config.js') }}
 
     - name: Save cache build (Windows)
-      if: ${{ runner.os == 'Windows' && steps.cache-restore-build.outputs.cache-hit != 'true' }}
+      if: ${{ runner.os == 'Windows' && steps.cache-restore-build-win.outputs.cache-hit != 'true' }}
       uses: actions/cache/save@v3  
       with:
         path: |
