@@ -103,12 +103,12 @@ runs:
       uses: actions/cache/restore@v3 
       with:
         path: ${{ inputs.extraResources }}
-        key: ${{ runner.os }}-extra-${{ hashFiles(format('**/{0}/**', inputs.buildraResources)) }}
+        key: ${{ runner.os }}-extra-${{ hashFiles(format('**/{0}/**', inputs.extraResources)) }}
 
     - name: Create extraResources directory (openssl for Windows)
       if: ${{ runner.os == 'Windows' && steps.cache-restore-extra.outputs.cache-hit != 'true' }}
       shell: pwsh
-      run: mkdir ${{ steps.setup.outputs.extraResources }}
+      run: mkdir ${{ inputs.extraResources }}
 
     - name: Configure, build, test and install (openssl for Windows)  
       if: ${{ runner.os == 'Windows' && steps.cache-restore-extra.outputs.cache-hit != 'true' }}
