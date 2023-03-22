@@ -2,6 +2,11 @@ name: Build template for krux-installer
 description: 'Build template for krux-installer'
 
 inputs: 
+  
+  token:
+    description: 'A Github PAT'
+    required: true
+  
   app_name:
     required: true
     type: string
@@ -106,7 +111,7 @@ runs:
       run: mkdir ${{ steps.setup.outputs.extraResources }}
 
     - name: Configure, build, test and install (openssl for Windows)  
-      if: ${{ runner.os == 'Windows' steps.cache-restore-extra.outputs.cache-hit != 'true' }}
+      if: ${{ runner.os == 'Windows' && steps.cache-restore-extra.outputs.cache-hit != 'true' }}
       uses: qlrd/compile-openssl-windows-action@v0.0.2
       with:
         build-type: 'plain'
@@ -122,7 +127,7 @@ runs:
         RPEM: ${{ inputs.firmware-release-pem }}
         RSIG: ${{ inputs.firmware-release-sig }}
         OBIN: ${{ inputs.openssl-bin }}
-        KZIP: ${{ input.zip-file }}
+        KZIP: ${{ inputs.zip-file }}
         KPEM: ${{ inputs.pem-file }}
         KSIG: ${{ inputs.sig-file }}
       run: |
@@ -135,15 +140,15 @@ runs:
       if: ${{ runner.os == 'Linux' && steps.cache-restore-build-linux.outputs.cache-hit != 'true' }}
       shell: bash
       env:
-        GH_TOKEN: ${{ secrets.github_token }}
-      run: yarn run build ${{ matrix.build }}
+        GH_TOKEN: ${{ inputs.token }}
+      run: yarn run build ${{ inputs.build }}
 
     - name: Build electron app (Windows)
       if: ${{ runner.os == 'Windows' && steps.cache-restore-build-win.outputs.cache-hit != 'true' }}
       shell: pwsh
       env:
-        GH_TOKEN: ${{ secrets.github_token }}
-      run: yarn run build ${{ matrix.build }}
+        GH_TOKEN: ${{ inputs.token }}
+      run: yarn run build ${{ inputs.build }}
 
     - name: Hash electron app (Linux)
       if: ${{ runner.os == 'Linux' && steps.cache-restore-build-linux.outputs.cache-hit != 'true' }}
