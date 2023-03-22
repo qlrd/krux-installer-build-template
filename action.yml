@@ -1,0 +1,176 @@
+name: Build template for krux-installer
+description: 'Build template for krux-installer'
+
+inputs: 
+  app_name:
+    required: true
+    type: string
+      
+  build:
+    required: true
+    type: string
+
+  extraResources:
+    required: false
+    type: string
+
+  openssl-version:
+    required: false
+    default: '3.1.0'
+    type: string
+
+  openssl-prefix:
+    required: false
+    type: string
+
+  openssl-dir:
+    required: false
+    type: string
+
+  openssl-bin:
+    required: false
+    type: string
+
+  firmware-release-zip:
+    required: false
+    type: string
+
+  firmware-release-sig:
+    required: false
+    type: string
+
+  firmware-release-pem:
+    required: false
+    type: string
+
+  zip-file:
+    required: false
+    type: string
+
+  sig-file:
+    required: false
+    type: string
+
+  pem-file:
+    required: false
+    type: string
+
+runs:
+  using: 'composite'
+    
+  steps:
+
+    - name: Restore cache build (Linux)
+      if: ${{ runner.os == 'Linux' }}
+      id: restore-cache-build
+      uses: actions/cache/restore@v3 
+      with:
+        path: |
+          ${{ github.workspace }}/dist_electron/${{ inputs.app_name }}.${{ inputs.build }} 
+          ${{ github.workspace }}/dist_electron/${{ inputs.app_name }}.${{ inputs.build }}.sha256sum.txt
+          ${{ github.workspace }}/dist_electron/linux-unpacked
+        key: ${{ runner.os }}-build-${{ hashFiles('src/**', 'public/**', 'vue.config.js') }}
+
+    - name: Restore cache build (Windows)
+      if: ${{ runner.os == 'Windows' }}
+      id: restore-cache-build
+      uses: actions/cache/restore@v3 
+      with:
+        path: |
+          ${{ github.workspace }}/dist_electron/${{ inputs.app_name }}.exe 
+          ${{ github.workspace }}/dist_electron/${{ inputs.app_name }}.exe.sha256sum.txt
+          ${{ github.workspace }}/dist_electron/win32-unpacked
+        key: ${{ runner.os }}-build-${{ hashFiles('src/**', 'public/**', 'vue.config.js') }}
+
+    - name: Lint (Linux)
+      if: ${{ runner.os == 'Linux' && steps.cache-restore-build.outputs.cache-hit != 'true' }}
+      shell: bash
+      run: yarn run lint
+   
+    - name: Lint (Windows)
+      if: ${{ runner.os == 'Windows' && steps.cache-restore-build.outputs.cache-hit != 'true' }}
+      shell: pwsh
+      run: yarn run lint
+
+    - name: Restore extraResources (openssl for Windows)
+      if: ${{ runner.os == 'Windows' }}
+      id: cache-restore-extra 
+      uses: actions/cache/restore@v3 
+      with:
+        path: ${{ inputs.buildraResources }}
+        key: ${{ runner.os }}-extra-${{ hashFiles(format('**/{0}/**', inputs.buildraResources)) }}
+
+    - name: Create extraResources directory (openssl for Windows)
+      if: ${{ runner.os == 'Windows' && steps.cache-restore-extra.outputs.cache-hit != 'true' }}
+      shell: pwsh
+      run: mkdir ${{ steps.setup.outputs.extraResources }}
+
+    - name: Configure, build, test and install (openssl for Windows)  
+      if: ${{ runner.os == 'Windows' steps.cache-restore-extra.outputs.cache-hit != 'true' }}
+      uses: qlrd/compile-openssl-windows-action@v0.0.2
+      with:
+        build-type: 'plain'
+        version: openssl-${{ inputs.openssl-version }}
+        prefix: ${{ inputs.openssl-prefix }}
+        openssldir: ${{ inputs.openssl-dir }}
+
+    - name: Pre-test built-in krux's (openssl for Windows)
+      if: ${{ runner.os == 'Windows' && steps.cache-restore-extra.outputs.cache-hit != 'true' }}
+      shell: cmd
+      env:
+        RZIP: ${{ inputs.firmware-release-zip }}
+        RPEM: ${{ inputs.firmware-release-pem }}
+        RSIG: ${{ inputs.firmware-release-sig }}
+        OBIN: ${{ inputs.openssl-bin }}
+        KZIP: ${{ input.zip-file }}
+        KPEM: ${{ inputs.pem-file }}
+        KSIG: ${{ inputs.sig-file }}
+      run: |
+        curl.exe -L $Env:RZIP -o $Env:KZIP
+        curl.exe -L $Env:RSIG -o $Env:KSIG
+        curl.exe -L -H "Accept-Charset: utf-8" $Env:RPEM -o $Env:KPEM
+        $Env:OBIN sha256 <$Env:KZIP -binary | $Env:OBIN pkeyutl -verify -pubin -inkey $Env:KPEM -sigfile $Env:KSIG
+
+    - name: Build electron app (Linux)
+      if: ${{ runner.os == 'Linux' && steps.cache-restore-build.outputs.cache-hit != 'true' }}
+      shell: bash
+      env:
+        GH_TOKEN: ${{ secrets.github_token }}
+      run: yarn run build ${{ matrix.build }}
+
+    - name: Build electron app (Windows)
+      if: ${{ runner.os == 'Windows' && steps.cache-restore-build.outputs.cache-hit != 'true' }}
+      shell: pwsh
+      env:
+        GH_TOKEN: ${{ secrets.github_token }}
+      run: yarn run build ${{ matrix.build }}
+
+    - name: Hash electron app (Linux)
+      if: ${{ runner.os == 'Linux' && steps.cache-restore-build.outputs.cache-hit != 'true' }}
+      shell: bash
+      run: echo "${{ hashFiles(format('**/dist_electron/{0}.{1}', inputs.app_name, inputs.build)) }} ${{ inputs.app_name }}.${{ inputs.build }}" >> dist_electron/${{ inputs.app_name }}.${{ inputs.build }}.sha256sum.txt
+
+    - name: Hash electron app (Windows)
+      if: ${{ runner.os == 'Windows' && steps.cache-restore-build.outputs.cache-hit != 'true' }}
+      shell: pwsh
+      run: Write-Output "${{ hashFiles(format('**/dist_electron/{0}.{1}', inputs.app_name, inputs.build)) }} ${{ inputs.app_name }}.${{ inputs.build }}" | Out-File -FilePath dist_electron/${{ inputs.app_name }}.${{ inputs.build }}.sha256sum.txt -Encoding utf8 -Append
+
+    - name: Save cache build (Linux)
+      if: ${{ runner.os == 'Linux' && steps.cache-restore-build.outputs.cache-hit != 'true' }}
+      uses: actions/cache/save@v3  
+      with:
+        path: |
+          ${{ github.workspace }}/dist_electron/${{ inputs.app_name }}.${{ inputs.build }} 
+          ${{ github.workspace }}/dist_electron/${{ inputs.app_name }}.${{ inputs.build }}.sha256sum.txt
+          ${{ github.workspace }}/dist_electron/linux-unpacked
+        key: ${{ runner.os }}-build-${{ hashFiles('src/**', 'public/**', 'vue.config.js') }}
+
+    - name: Save cache build (Windows)
+      if: ${{ runner.os == 'Windows' && steps.cache-restore-build.outputs.cache-hit != 'true' }}
+      uses: actions/cache/save@v3  
+      with:
+        path: |
+          ${{ github.workspace }}/dist_electron/${{ inputs.app_name }}.exe 
+          ${{ github.workspace }}/dist_electron/${{ inputs.app_name }}.exe.sha256sum.txt
+          ${{ github.workspace }}/dist_electron/win32-unpacked
+        key: ${{ runner.os }}-build-${{ hashFiles('src/**', 'public/**', 'vue.config.js') }}
