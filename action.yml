@@ -168,14 +168,24 @@ runs:
       shell: pwsh
       run: Write-Output "${{ hashFiles(format('**/dist_electron/{0}.exe', inputs.app_name)) }} ${{ inputs.app_name }}.exe" | Out-File -FilePath dist_electron/${{ inputs.app_name }}.exe.sha256sum.txt -Encoding utf8 -Append
 
+    - name: List dist_electron files (Linux)
+      if: ${{ runner.os == 'Linux' }}
+      shell: bash
+      run: ls dist_electron
+
+    - name: List dist_electron files (Windows)
+      if: ${{ runner.os == 'Windows' }}
+      shell: pwsh
+      run: ls dist_electron
+
     - name: Save cache build (Linux)
       if: ${{ runner.os == 'Linux' && steps.cache-restore-build-linux.outputs.cache-hit != 'true' }}
       uses: actions/cache/save@v3  
       with:
         path: |
-          ${{ github.workspace }}/dist_electron/${{ inputs.app_name }}.${{ inputs.build }} 
-          ${{ github.workspace }}/dist_electron/${{ inputs.app_name }}.${{ inputs.build }}.sha256sum.txt
-          ${{ github.workspace }}/dist_electron/linux-unpacked
+          dist_electron/${{ inputs.app_name }}.${{ inputs.build }} 
+          dist_electron/${{ inputs.app_name }}.${{ inputs.build }}.sha256sum.txt
+          dist_electron/linux-unpacked
         key: ${{ runner.os }}-build-${{ hashFiles('src/**', 'public/**', 'vue.config.js') }}
 
     - name: Save cache build (Windows)
@@ -183,7 +193,7 @@ runs:
       uses: actions/cache/save@v3  
       with:
         path: |
-          ${{ github.workspace }}/dist_electron/${{ inputs.app_name }}.exe 
-          ${{ github.workspace }}/dist_electron/${{ inputs.app_name }}.exe.sha256sum.txt
-          ${{ github.workspace }}/dist_electron/win32-unpacked
+          dist_electron/${{ inputs.app_name }}.exe 
+          dist_electron/${{ inputs.app_name }}.exe.sha256sum.txt
+          dist_electron/win32-unpacked
         key: ${{ runner.os }}-build-${{ hashFiles('src/**', 'public/**', 'vue.config.js') }}
