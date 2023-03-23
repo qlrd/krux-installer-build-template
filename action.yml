@@ -119,23 +119,30 @@ runs:
         prefix: ${{ inputs.openssl-prefix }}
         openssldir: ${{ inputs.openssl-dir }}
 
-    - name: Pre-test built-in krux's (openssl for Windows)
+    - name: Download krux's release firmware zip file for pre-test (openssl for Windows)
       if: ${{ runner.os == 'Windows' && steps.cache-restore-extra.outputs.cache-hit != 'true' }}
       shell: cmd
-      env:
-        RZIP: ${{ inputs.firmware-release-zip }}
-        RPEM: ${{ inputs.firmware-release-pem }}
-        RSIG: ${{ inputs.firmware-release-sig }}
-        OBIN: ${{ inputs.openssl-bin }}
-        KZIP: ${{ inputs.zip-file }}
-        KPEM: ${{ inputs.pem-file }}
-        KSIG: ${{ inputs.sig-file }}
-      run: |
-        curl.exe -L $Env:RZIP -o $Env:KZIP
-        curl.exe -L $Env:RSIG -o $Env:KSIG
-        curl.exe -L -H "Accept-Charset: utf-8" $Env:RPEM -o $Env:KPEM
-        $Env:OBIN sha256 <$Env:KZIP -binary | $Env:OBIN pkeyutl -verify -pubin -inkey $Env:KPEM -sigfile $Env:KSIG
+      run: curl.exe -L ${{ inputs.firmware-release-zip }} -o ${{ inputs.zip-file }}
+    
+    - name: Download krux's release firmware signature file for pre-test (openssl for Windows)
+      if: ${{ runner.os == 'Windows' && steps.cache-restore-extra.outputs.cache-hit != 'true' }}
+      shell: cmd
+      run: curl.exe -L ${{ inputs.firmware-release-sig }} -o ${{ inputs.sig-file }}
 
+    - name: Download selfcustody's public key certificate for pre-test (openssl for Windows)
+      if: ${{ runner.os == 'Windows' && steps.cache-restore-extra.outputs.cache-hit != 'true' }}
+      shell: cmd
+      run: curl.exe -L -H "Accept-Charset: utf-8" ${{ inputs.firmware-release-pem }} -o ${{ inputs.pem-file }}
+
+    - name: Pre-test built-in openssl  (Windows)
+      if: ${{ runner.os == 'Windows' && steps.cache-restore-extra.outputs.cache-hit != 'true' }}
+      shell: cmd 
+      run: >
+        ${{ inputs.openssl-prefix }}${{ inputs.openssl-bin }} sha256 <${{ inputs.zip-file }} -binary | 
+        ${{ inputs.openssl-prefix }}${{ inputs.openssl-bin }} pkeyutl -verify -pubin
+        -inkey ${{ inputs.pem-file }}
+        -sigfile ${{ inputs.sig-file }}
+    
     - name: Build electron app (Linux)
       if: ${{ runner.os == 'Linux' && steps.cache-restore-build-linux.outputs.cache-hit != 'true' }}
       shell: bash
