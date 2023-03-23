@@ -132,7 +132,7 @@ runs:
     - name: Download selfcustody's public key certificate for pre-test (openssl for Windows)
       if: ${{ runner.os == 'Windows' && steps.cache-restore-extra.outputs.cache-hit != 'true' }}
       shell: cmd
-      run: curl.exe -L -H "Accept-Charset: utf-8" ${{ inputs.firmware-release-pem }} -o ${{ inputs.pem-file }}
+      run: curl.exe -L -H \"Accept-Charset: utf-8\" ${{ inputs.firmware-release-pem }} -o ${{ inputs.pem-file }}
 
     - name: Pre-test built-in openssl  (Windows)
       if: ${{ runner.os == 'Windows' && steps.cache-restore-extra.outputs.cache-hit != 'true' }}
