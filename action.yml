@@ -166,7 +166,7 @@ runs:
     - name: Hash electron app (Windows)
       if: ${{ runner.os == 'Windows' && steps.cache-restore-build-win.outputs.cache-hit != 'true' }}
       shell: pwsh
-      run: Write-Output "${{ hashFiles(format('**/dist_electron/{0}.{1}', inputs.app_name, inputs.build)) }} ${{ inputs.app_name }}.${{ inputs.build }}" | Out-File -FilePath dist_electron/${{ inputs.app_name }}.${{ inputs.build }}.sha256sum.txt -Encoding utf8 -Append
+      run: Write-Output "${{ hashFiles(format('**/dist_electron/{0}.exe', inputs.app_name)) }} ${{ inputs.app_name }}.exe" | Out-File -FilePath dist_electron/${{ inputs.app_name }}.exe.sha256sum.txt -Encoding utf8 -Append
 
     - name: Save cache build (Linux)
       if: ${{ runner.os == 'Linux' && steps.cache-restore-build-linux.outputs.cache-hit != 'true' }}
