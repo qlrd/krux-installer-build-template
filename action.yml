@@ -95,10 +95,14 @@ runs:
         path: ${{ inputs.extraResources }}
         key: ${{ runner.os }}-extra-${{ hashFiles(inputs.extraResources) }}
 
-    - name: Create extraResources directory (openssl for Windows)
+    - name: Create extraResources directory if not exists (openssl for Windows)
       if: ${{ runner.os == 'Windows' && steps.restore-cache-extra.outputs.cache-hit != 'true' }}
       shell: pwsh
-      run: mkdir ${{ inputs.extraResources }}
+      run: |
+        $exists=Test-Path -Path ${{ inputs.extraResources }}
+        if(!$exists) { \
+          New-Item -ItemType directory -Path ${{ inputs.extraResources }} \
+        }
 
     - name: Configure, build, test and install (openssl for Windows)  
       if: ${{ runner.os == 'Windows' && steps.restore-cache-extra.outputs.cache-hit != 'true' }}
