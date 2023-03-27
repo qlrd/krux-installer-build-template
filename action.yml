@@ -84,24 +84,24 @@ runs:
         path: |
           dist_electron/${{ inputs.app_name }}.exe 
           dist_electron/${{ inputs.app_name }}.exe.sha256sum.txt
-          dist_electron/win32-unpacked
+          dist_electron/win-unpacked
         key: ${{ runner.os }}-build-${{ hashFiles('src/**', 'public/**', 'vue.config.js') }}
 
     - name: Restore extraResources (openssl for Windows)
       if: ${{ runner.os == 'Windows' }}
-      id: cache-restore-extra 
+      id: restore-cache-extra 
       uses: actions/cache/restore@v3 
       with:
         path: ${{ inputs.extraResources }}
-        key: ${{ runner.os }}-extra-${{ hashFiles(format('**/{0}/**', inputs.extraResources)) }}
+        key: ${{ runner.os }}-extra-${{ hashFiles(inputs.extraResources) }}
 
     - name: Create extraResources directory (openssl for Windows)
-      if: ${{ runner.os == 'Windows' && steps.cache-restore-extra.outputs.cache-hit != 'true' }}
+      if: ${{ runner.os == 'Windows' && steps.restore-cache-extra.outputs.cache-hit != 'true' }}
       shell: pwsh
       run: mkdir ${{ inputs.extraResources }}
 
     - name: Configure, build, test and install (openssl for Windows)  
-      if: ${{ runner.os == 'Windows' && steps.cache-restore-extra.outputs.cache-hit != 'true' }}
+      if: ${{ runner.os == 'Windows' && steps.restore-cache-extra.outputs.cache-hit != 'true' }}
       uses: qlrd/compile-openssl-windows-action@v0.0.2
       with:
         build-type: 'plain'
@@ -110,30 +110,37 @@ runs:
         openssldir: ${{ inputs.openssl-dir }}
 
     - name: Download krux's release firmware zip file for pre-test (openssl for Windows)
-      if: ${{ runner.os == 'Windows' && steps.cache-restore-extra.outputs.cache-hit != 'true' }}
+      if: ${{ runner.os == 'Windows' && steps.restore-cache-extra.outputs.cache-hit != 'true' }}
       shell: cmd
       run: curl.exe -L ${{ inputs.firmware-release-zip }} -o ${{ inputs.zip-file }}
     
     - name: Download krux's release firmware signature file for pre-test (openssl for Windows)
-      if: ${{ runner.os == 'Windows' && steps.cache-restore-extra.outputs.cache-hit != 'true' }}
+      if: ${{ runner.os == 'Windows' && steps.restore-cache-extra.outputs.cache-hit != 'true' }}
       shell: cmd
       run: curl.exe -L ${{ inputs.firmware-release-sig }} -o ${{ inputs.sig-file }}
 
     - name: Download selfcustody's public key certificate for pre-test (openssl for Windows)
-      if: ${{ runner.os == 'Windows' && steps.cache-restore-extra.outputs.cache-hit != 'true' }}
+      if: ${{ runner.os == 'Windows' && steps.restore-cache-extra.outputs.cache-hit != 'true' }}
       shell: cmd
       run: |
         curl.exe -L -H "Accept-Charset: utf-8" ${{ inputs.firmware-release-pem }} -o ${{ inputs.pem-file }}
 
     - name: Pre-test built-in openssl  (Windows)
-      if: ${{ runner.os == 'Windows' && steps.cache-restore-extra.outputs.cache-hit != 'true' }}
+      if: ${{ runner.os == 'Windows' && steps.restore-cache-extra.outputs.cache-hit != 'true' }}
       shell: cmd 
       run: >
         ${{ inputs.openssl-prefix }}${{ inputs.openssl-bin }} sha256 <${{ inputs.zip-file }} -binary | 
         ${{ inputs.openssl-prefix }}${{ inputs.openssl-bin }} pkeyutl -verify -pubin
         -inkey ${{ inputs.pem-file }}
         -sigfile ${{ inputs.sig-file }}
-    
+   
+    - name: Save cached built-in openssl (Windows)
+      if: ${{ runner.os == 'Windows' && steps.restore-cache-extra.outputs.cache-hit != 'true' }}
+      uses: actions/cache/save@v3  
+      with:
+        path: ${{ inputs.extraResources }}
+        key: ${{ runner.os }}-build-${{ hashFiles(inputs.extraResources) }}
+
     - name: Build electron app (Linux)
       if: ${{ runner.os == 'Linux' && steps.cache-restore-build-linux.outputs.cache-hit != 'true' }}
       shell: bash
@@ -181,6 +188,7 @@ runs:
         path: |
           dist_electron/${{ inputs.app_name }}.${{ inputs.build }} 
           dist_electron/${{ inputs.app_name }}.${{ inputs.build }}.sha256sum.txt
+          dist_electron/linux-unpacked
         key: ${{ runner.os }}-build-${{ hashFiles('src/**', 'public/**', 'vue.config.js') }}
 
     - name: Save cache build (Windows)
@@ -190,4 +198,5 @@ runs:
         path: |
           dist_electron/${{ inputs.app_name }}.exe 
           dist_electron/${{ inputs.app_name }}.exe.sha256sum.txt
+          dist_electron/win-unpacked
         key: ${{ runner.os }}-build-${{ hashFiles('src/**', 'public/**', 'vue.config.js') }}
