@@ -139,7 +139,7 @@ runs:
       uses: actions/cache/save@v3  
       with:
         path: ${{ inputs.extraResources }}
-        key: ${{ runner.os }}-build-${{ hashFiles(inputs.extraResources) }}
+        key: ${{ runner.os }}-extra-${{ hashFiles(inputs.extraResources) }}
 
     - name: Build electron app (Linux)
       if: ${{ runner.os == 'Linux' && steps.cache-restore-build-linux.outputs.cache-hit != 'true' }}
