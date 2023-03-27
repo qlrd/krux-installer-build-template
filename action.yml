@@ -169,7 +169,7 @@ runs:
       run: |
         $hash=${{ hashFiles(format('dist_electron/{0}.exe', inputs.app_name)) }}
         Write-Output "$hash ${{ inputs.app_name }}.exe" | Out-File -FilePath dist_electron/${{ inputs.app_name }}.exe.sha256sum.txt -Encoding utf8 -Append
-        Write-Output "app_hash=$HASH" | Out-File -FilePath $Env:GITHUB_OUTPUT
+        Write-Output "app_hash=$hash" | Out-File -FilePath $Env:GITHUB_OUTPUT
 
     - name: List dist_electron files (Linux)
       if: ${{ runner.os == 'Linux' }}
