@@ -152,7 +152,7 @@ runs:
       if: ${{ runner.os == 'Linux' && steps.cache-restore-build-linux.outputs.cache-hit != 'true' }}
       shell: bash
       run: |
-        HASH=${{ hashFiles(format('dist_electron/{0}.{1}', inputs.app_name, inputs.build)) }}
+        HASH=sha256sum ${{ format('dist_electron/{0}.{1}', inputs.app_name, inputs.build) }} | awk "{ print $1 }"
         echo "app_hash=$HASH" >> $GITHUB_OUTPUTS
         echo "$HASH ${{ inputs.app_name }}.${{ inputs.build }}" >> dist_electron/${{ inputs.app_name }}.${{ inputs.build }}.sha256sum.txt
 
@@ -160,7 +160,7 @@ runs:
       if: ${{ runner.os == 'Windows' && steps.cache-restore-build-win.outputs.cache-hit != 'true' }}
       shell: pwsh
       run: |
-        $hash=${{ hashFiles(format('dist_electron/{0}.exe', inputs.app_name)) }}
+        $hash=Get-FileHash -Algorithm SHA256 -Path {{ format('dist_electron/{0}.exe', inputs.app_name) }} SHA256 | Select-Object -ExpandProperty Hash
         echo "app_hash=$hash"
         Write-Ouput "$hash ${{ inputs.app_name }}.exe" | Out-File -FilePath dist_electron/${{ inputs.app_name }}.exe.sha256sum.txt -Encoding utf8 -Append
 
