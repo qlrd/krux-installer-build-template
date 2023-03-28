@@ -144,21 +144,21 @@ runs:
         key: ${{ runner.os }}-extra-openssl-${{ inputs.openssl-version }}
 
     - name: Build electron app (Linux)
-      if: ${{ runner.os == 'Linux' && steps.cache-restore-build-linux.outputs.cache-hit != 'true' }}
+      if: ${{ runner.os == 'Linux' && steps.restore-cache-build-linux.outputs.cache-hit != 'true' }}
       shell: bash
       env:
         GH_TOKEN: ${{ inputs.token }}
       run: yarn run build ${{ inputs.build }}
 
     - name: Build electron app (Windows)
-      if: ${{ runner.os == 'Windows' && steps.cache-restore-build-win.outputs.cache-hit != 'true' }}
+      if: ${{ runner.os == 'Windows' && steps.restore-cache-build-win.outputs.cache-hit != 'true' }}
       shell: pwsh
       env:
         GH_TOKEN: ${{ inputs.token }}
       run: yarn run build ${{ inputs.build }}
 
     - name: Hash electron app (Linux)
-      if: ${{ runner.os == 'Linux' && steps.cache-restore-build-linux.outputs.cache-hit != 'true' }}
+      if: ${{ runner.os == 'Linux' && steps.restore-cache-build-linux.outputs.cache-hit != 'true' }}
       shell: bash
       run: |
         HASH=${{ hashFiles(format('dist_electron/{0}.{1}', inputs.app_name, inputs.build)) }} 
@@ -166,7 +166,7 @@ runs:
         echo "app_hash=$HASH" >> $GITHUB_OUTPUT
 
     - name: Hash electron app (Windows)
-      if: ${{ runner.os == 'Windows' && steps.cache-restore-build-win.outputs.cache-hit != 'true' }}
+      if: ${{ runner.os == 'Windows' && steps.restore-cache-build-win.outputs.cache-hit != 'true' }}
       shell: pwsh
       run: |
         $hash="${{ hashFiles(format('dist_electron/{0}.exe', inputs.app_name)) }}"
@@ -184,7 +184,7 @@ runs:
       run: ls dist_electron
 
     - name: Save cache build (Linux)
-      if: ${{ runner.os == 'Linux' && steps.cache-restore-build-linux.outputs.cache-hit != 'true' }}
+      if: ${{ runner.os == 'Linux' && steps.restore-cache-build-linux.outputs.cache-hit != 'true' }}
       uses: actions/cache/save@v3  
       with:
         path: |
@@ -194,7 +194,7 @@ runs:
         key: ${{ runner.os }}-build-${{ hashFiles('src/**', 'public/**', 'vue.config.js') }}
 
     - name: Save cache build (Windows)
-      if: ${{ runner.os == 'Windows' && steps.cache-restore-build-win.outputs.cache-hit != 'true' }}
+      if: ${{ runner.os == 'Windows' && steps.restore-cache-build-win.outputs.cache-hit != 'true' }}
       uses: actions/cache/save@v3  
       with:
         path: |
