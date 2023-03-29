@@ -181,7 +181,9 @@ runs:
     - name: List dist_electron files (Windows)
       if: ${{ runner.os == 'Windows' }}
       shell: pwsh
-      run: ls dist_electron
+      run: |
+        ls dist_electron
+        ls dist_electron\win-unpacked
 
     - name: Save cache build (Linux)
       if: ${{ runner.os == 'Linux' && steps.restore-cache-build-linux.outputs.cache-hit != 'true' }}
