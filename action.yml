@@ -158,7 +158,7 @@ runs:
       run: yarn run build ${{ inputs.build }}
 
     - name: Hash electron app (Linux)
-      if: ${{ runner.os === 'Linux' && steps.restore-cache-build-linux.outputs.cache-hig != 'true' }}
+      if: ${{ runner.os == 'Linux' && steps.restore-cache-build-linux.outputs.cache-hig != 'true' }}
       uses: qlrd/sha256sum-action@v2
       with:
         working-directory: ./dist_electron
@@ -166,7 +166,7 @@ runs:
         ext: sha256.txt
 
     - name: Hash electron app (Windows)
-      if: ${{ runner.os === 'Windows' && steps.restore-cache-build-win.outputs.cache-hig != 'true' }}
+      if: ${{ runner.os == 'Windows' && steps.restore-cache-build-win.outputs.cache-hig != 'true' }}
       uses: qlrd/sha256sum-action@v2
       with:
         working-directory: ./dist_electron
